@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MoET Booking System{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            border-radius: 0.75rem;
+        }
+        .card-header {
+            border-bottom: none;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        .navbar-brand{
+            font-size: 1.1rem;
+            color: #f8f9fa !important;
+        }
+        .nav-link {
+            color: #f8f9fa !important;
+        }
+        .nav-link:hover {
+            color: #dde01d !important;
+        }
+    </style>
+        
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-light d-flex flex-column h-100">
+
+    {% comment %} <nav class="navbar navbar-expand-lg mb-4 shadow-sm text-light" style="background-color: #c2c2c2de;"> {% endcomment %}
+        <nav class="navbar navbar-expand-lg bg-dark mb-4 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">MoET Booking System</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                <a class="nav-link" href="{% url 'book_room' %}">Book a Room</a>
+                <a class="nav-link" href="{% url 'calendar' %}">Calendar</a>
+            </div>
+        </div>
+    </nav>
+
+        <div class="container">
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}
+            {% endblock %}
+            
+        </div>
+ 
+    </div> 
+    <footer class="bg-dark text-light py-4 mt-auto">
+        <div class="container text-center">
+            <p class="mb-0">&copy; {% now "Y" %} Ministry of Education & Training. All rights reserved.</p>
+            <small class="text-secondary">
+                Room Booking System v1.0 | 
+                <a href="#" class="text-decoration-none text-secondary hover-white">IT Support</a> | 
+                <a href="#" class="text-decoration-none text-secondary hover-white">Policies</a>
+            </small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

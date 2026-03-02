@@ -1,0 +1,37 @@
+{% extends 'bookings/base.html' %}
+
+{% block title %}Calendar | MoET{% endblock %}
+
+{% block extra_head %}
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'timeGridWeek',
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+          },
+          slotMinTime: '07:00:00',
+          slotMaxTime: '19:00:00',
+          allDaySlot: false,
+          events: '/api/bookings/',
+          selectable: true,
+          select: function(info) {
+              window.location.href = "{% url 'book_room' %}";
+          }
+        });
+        calendar.render();
+      });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div id='calendar'></div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'bookings/base.html' %}
+
+{% block title %}Dashboard | MoET{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Live Room Status</h2>
+    <p class="text-muted">Current System Time: {{ current_time|date:"F j, Y, g:i a" }}</p>
+    
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for data in room_data %}
+            <div class="col">
+                <div class="card h-100 shadow-sm {% if data.is_occupied %}border-danger{% else %}border-success{% endif %}">
+                    <div class="card-header text-white {% if data.is_occupied %}bg-danger{% else %}bg-success{% endif %}">
+                        <h5 class="card-title mb-0">{{ data.room.name }}</h5>
+                    </div>
+
+                    <div class="card-body">
+                        <p class="card-text"><strong>Location:</strong> {{ data.room.location }}</p>
+                        <p class="card-text"><strong>Capacity:</strong> {{ data.room.capacity }} people</p>
+                        <hr>
+                        {% if data.is_occupied %}
+                            <h6 class="text-danger">🔴 Currently Occupied</h6>
+                            <p class="mb-1"><strong>Booked by:</strong> {{ data.current_booking.officer.get_full_name|default:data.current_booking.officer.username }}</p>
+                            <p class="mb-1"><strong>Purpose:</strong> {{ data.current_booking.purpose }}</p>
+                            <p class="mb-0 text-muted small">Until: {{ data.current_booking.end_time|time:"g:i A" }}</p>
+                        {% else %}
+                            <h6 class="text-success">🟢 Vacant</h6>
+                            <p class="text-muted">Ready for use.</p>
+                            <a href="{% url 'book_room' %}?room={{ data.room.id }}" class="btn btn-sm btn-outline-success mt-2">Book Now</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
