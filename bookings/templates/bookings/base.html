@@ -25,7 +25,7 @@
             color: #f8f9fa !important;
         }
         .nav-link {
-            color: #f8f9fa !important;
+            color: #f8f9fa;
         }
         .nav-link:hover {
             color: #dde01d !important;
@@ -36,8 +36,49 @@
 </head>
 <body class="bg-light d-flex flex-column h-100">
 
-    {% comment %} <nav class="navbar navbar-expand-lg mb-4 shadow-sm text-light" style="background-color: #c2c2c2de;"> {% endcomment %}
-        <nav class="navbar navbar-expand-lg bg-dark mb-4 shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">MoET Room Booking System</a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+
+                        <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'calendar' %}">Calendar</a></li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'book_room' %}">Book a Room</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'my_bookings' %}">My Bookings</a></li>
+                        
+                        {% if user.is_staff or user.rooms_to_approve.exists %}
+                            <li class="nav-item"><a class="nav-link text-warning" href="{% url 'pending_approvals' %}">Approvals</a></li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="nav-link text-light">Welcome, {{ user.first_name }} </span>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{% url 'logout' %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-link nav-link">Log Out</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Log In</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% comment %} <nav class="navbar navbar-expand-lg bg-dark mb-4 shadow-sm">
         <div class="container">
             <a class="navbar-brand" href="{% url 'dashboard' %}">MoET Booking System</a>
             <div class="navbar-nav">
@@ -46,7 +87,7 @@
                 <a class="nav-link" href="{% url 'calendar' %}">Calendar</a>
             </div>
         </div>
-    </nav>
+    </nav> {% endcomment %}
 
         <div class="container">
             

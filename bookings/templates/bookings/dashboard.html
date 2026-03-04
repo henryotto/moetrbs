@@ -9,6 +9,45 @@
     <div class="row row-cols-1 row-cols-md-3 g-4">
         {% for data in room_data %}
             <div class="col">
+                <div class="card h-100 shadow-sm {% if data.is_occupied %}border-danger{% elif data.is_pending %}border-warning{% else %}border-success{% endif %}">
+                    
+                    <div class="card-header {% if data.is_occupied %}bg-danger text-white{% elif data.is_pending %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
+                        <h5 class="card-title mb-0">{{ data.room.name }}</h5>
+                    </div>
+                    
+                    <div class="card-body">
+                        <p class="card-text"><strong>Location:</strong> {{ data.room.location }}</p>
+                        <p class="card-text"><strong>Capacity:</strong> {{ data.room.capacity }} pax</p>
+                        <hr>
+                        
+                        {% if data.is_occupied %}
+                            <h6 class="text-danger">🔴 Currently Occupied</h6>
+                            <p class="mb-1"><strong>Booked by:</strong> {{ data.current_booking.officer.get_full_name|default:data.current_booking.officer.username }}</p>
+                            <p class="mb-0 text-muted small">Until: {{ data.current_booking.end_time|time:"g:i A" }}</p>
+                        
+                        {% elif data.is_pending %}
+                            <h6 class="text-warning text-dark">🟡 Pending Approval</h6>
+                            <p class="mb-1"><strong>Requested by:</strong> {{ data.current_booking.officer.get_full_name|default:data.current_booking.officer.username }}</p>
+                            <p class="text-muted small mb-0">This room is tentatively booked.</p>
+
+                        {% else %}
+                            <h6 class="text-success">🟢 Vacant</h6>
+                            <p class="text-muted">Ready for use.</p>
+
+                            {% if data.next_booking %}
+                                <div class="alert alert-light border mt-2 p-2 small">
+                                    <strong>Next Meeting:</strong> {{ data.next_booking.start_time|time:"g:i A" }} - {{ data.next_booking.end_time|time:"g:i A" }}
+                                    ({{ data.next_booking.status }})
+                                </div>
+                            {% endif %}
+
+                            <a href="{% url 'book_room' %}?room={{ data.room.id }}" class="btn btn-sm btn-outline-success mt-2">Book Now</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+            {% comment %} <div class="col">
                 <div class="card h-100 shadow-sm {% if data.is_occupied %}border-danger{% else %}border-success{% endif %}">
                     <div class="card-header text-white {% if data.is_occupied %}bg-danger{% else %}bg-success{% endif %}">
                         <h5 class="card-title mb-0">{{ data.room.name }}</h5>
@@ -30,7 +69,6 @@
                         {% endif %}
                     </div>
                 </div>
-            </div>
-        {% endfor %}
+            </div> {% endcomment %}
     </div>
 {% endblock %}

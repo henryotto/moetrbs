@@ -1,0 +1,63 @@
+{% extends 'bookings/base.html' %}
+
+{% block title %}Pending Approvals | MoET{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Pending Room Requests</h2>
+        <span class="badge bg-warning text-dark fs-6">{{ bookings.count }} Request(s)</span>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Room</th>
+                            <th>Requested By</th>
+                            <th>Purpose</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                            <tr>
+                                <td class="fw-bold">{{ booking.room.name }}</td>
+                                <td>
+                                    {{ booking.officer.get_full_name|default:booking.officer.username }}
+                                    <br>
+                                    <small class="text-muted">{{ booking.officer.email }}</small>
+                                </td>
+                                <td>{{ booking.purpose }}</td>
+                                <td>{{ booking.start_time|date:"D, M j, Y, g:i A" }}</td>
+                                <td>{{ booking.end_time|date:"g:i A" }}</td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'process_booking' booking.id 'approve' %}" class="btn btn-sm btn-success" onclick="return confirm('Are you sure you want to approve this booking?');">
+                                            Approve
+                                        </a>
+                                        <a href="{% url 'process_booking' booking.id 'reject' %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to reject this booking?');">
+                                            Reject
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <h5 class="mb-0">All caught up!</h5>
+                                    <p class="mb-0">There are no pending booking requests at this time.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

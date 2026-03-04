@@ -1,0 +1,41 @@
+{% extends 'bookings/base.html' %}
+
+{% block title %}Log In | MoET{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white text-center py-3">
+                <h4 class="mb-0">Ministry Sign In</h4>
+            </div>
+            <div class="card-body p-4">
+                
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        Your username and password didn't match. Please try again.
+                    </div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label fw-bold">Username</label>
+                        <input type="text" name="username" class="form-control" id="id_username" placeholder="vangov username" required autofocus>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_password" class="form-label fw-bold">Password</label>
+                        <input type="password" name="password" class="form-control" id="id_password" placeholder="vangov password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100">Log In</button>
+                    <input type="hidden" name="next" value="{{ next }}">
+                </form>
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
