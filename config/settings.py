@@ -125,14 +125,6 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = f"MoET Room Booking System <{EMAIL_HOST_USER}>"
 
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = '10.250.0.82' # Internal SMTP Server IP
-# EMAIL_PORT = 25          # Standard internal unencrypted port
-# EMAIL_USE_TLS = False
-# EMAIL_USE_SSL = False
-# # No username or password needed for internal relays usually!
-# DEFAULT_FROM_EMAIL = 'room-notifications@moet.gov.vu'
-
 # Where to send users if they try to access a @login_required page
 LOGIN_URL = 'login' 
 
