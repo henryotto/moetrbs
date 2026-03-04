@@ -189,6 +189,47 @@ def my_bookings(request):
 
 
 @login_required
+def edit_booking(request, booking_id):
+    """Allows an officer to edit their own booking."""
+    # Ensure the user actually owns this booking
+    booking = get_object_or_404(Booking, id=booking_id, officer=request.user)
+    
+    # Don't allow editing of rejected or cancelled bookings
+    if booking.status in ['Rejected', 'Cancelled']:
+        messages.error(request, "You cannot edit a rejected or cancelled booking.")
+        return redirect('my_bookings')
+
+    if request.method == 'POST':
+        # Pass the existing booking 'instance' to the form so it knows we are updating, not creating
+        form = BookingForm(request.POST, instance=booking)
+        
+        if form.is_valid():
+            updated_booking = form.save(commit=False)
+            
+            # Since details changed, we put it back to Pending for the Secretary/IT to review
+            updated_booking.status = 'Pending' 
+            updated_booking.save()
+            
+            # --- NOTIFY APPROVERS OF THE CHANGE ---
+            subject = f"UPDATED Room Booking: {updated_booking.room.name}"
+            message = f"{updated_booking.officer.username} has updated their booking for {updated_booking.room.name}.\n\nPlease log in to review the new times."
+            approver_emails = [user.email for user in updated_booking.room.approvers.all() if user.email]
+            
+            if approver_emails:
+                send_mail(subject, message, None, approver_emails, fail_silently=True)
+
+            messages.success(request, "Booking updated successfully! It is now pending re-approval.")
+            return redirect('my_bookings')
+    else:
+        # Pre-fill the form with the existing booking data
+        form = BookingForm(instance=booking)
+
+    # We can reuse our existing book_room.html template!
+    # We pass 'is_edit': True so we can tweak the title on the page.
+    return render(request, 'bookings/book_room.html', {'form': form, 'is_edit': True})
+
+
+@login_required
 def cancel_booking(request, booking_id):
     """Allows an officer to cancel their own booking."""
     # get_object_or_404 ensures they can only cancel THEIR OWN bookings

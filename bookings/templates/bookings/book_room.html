@@ -7,8 +7,10 @@
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-dark text-white">
-                    <h4 class="mb-0">Request a Meeting Room</h4>
+                        {% if is_edit %}Edit Your Booking{% else %}Request a Meeting Room{% endif %}
+                    </h4>
                 </div>
+                
                 <div class="card-body">
                     
                     {% if form.non_field_errors %}
@@ -28,7 +30,10 @@
                                 {% endif %}
                             </div>
                         {% endfor %}
-                        <button type="submit" class="btn btn-success w-100">Submit Booking Request</button>
+
+                        <button type="submit" class="btn btn-success w-100">
+                                    {% if is_edit %}Save Changes{% else %}Submit Booking Request{% endif %}
+                        </button>
                     </form>
 
                 </div>

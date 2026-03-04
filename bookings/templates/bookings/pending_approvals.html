@@ -35,15 +35,58 @@
                                 <td>{{ booking.purpose }}</td>
                                 <td>{{ booking.start_time|date:"D, M j, Y, g:i A" }}</td>
                                 <td>{{ booking.end_time|date:"g:i A" }}</td>
+                                
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
-                                        <a href="{% url 'process_booking' booking.id 'approve' %}" class="btn btn-sm btn-success" onclick="return confirm('Are you sure you want to approve this booking?');">
+                                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ booking.id }}">
                                             Approve
-                                        </a>
-                                        <a href="{% url 'process_booking' booking.id 'reject' %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to reject this booking?');">
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ booking.id }}">
                                             Reject
-                                        </a>
+                                        </button>
                                     </div>
+
+                                    <div class="modal fade" id="approveModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content text-start">
+                                                <div class="modal-header bg-success text-white">
+                                                    <h5 class="modal-title">Approve Booking</h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Are you sure you want to approve this booking for <strong>{{ booking.officer.get_full_name|default:booking.officer.username }}</strong>?
+                                                    <br><br>
+                                                    Room: {{ booking.room.name }}<br>
+                                                    Time: {{ booking.start_time|date:"M j, Y, g:i A" }}
+                                                </div>
+                                                <div class="modal-footer bg-light">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <a href="{% url 'process_booking' booking.id 'approve' %}" class="btn btn-success">Confirm Approval</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="modal fade" id="rejectModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content text-start">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title">Reject Booking</h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Are you sure you want to <strong>reject</strong> this booking request?
+                                                    <br><br>
+                                                    An email notification will be sent to the officer informing them that the room is not available.
+                                                </div>
+                                                <div class="modal-footer bg-light">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <a href="{% url 'process_booking' booking.id 'reject' %}" class="btn btn-danger">Confirm Rejection</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </td>
                             </tr>
                         {% empty %}

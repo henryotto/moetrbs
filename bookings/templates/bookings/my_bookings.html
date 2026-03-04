@@ -40,10 +40,36 @@
                                 </td>
                                 <td class="text-center">
                                     {% if booking.status == 'Pending' or booking.status == 'Approved' %}
-                                        <a href="{% url 'cancel_booking' booking.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this booking?');">
-                                            Cancel
-                                        </a>
-                                    {% else %}
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'edit_booking' booking.id %}" class="btn btn-sm btn-outline-dark">
+                                                Edit
+                                            </a>
+                                            
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal{{ booking.id }}">
+                                                Cancel
+                                            </button>
+                                        </div>
+
+                                        <div class="modal fade" id="cancelModal{{ booking.id }}" tabindex="-1" aria-labelledby="cancelModalLabel{{ booking.id }}" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content text-start">
+                                                    <div class="modal-header bg-danger text-white">
+                                                        <h5 class="modal-title" id="cancelModalLabel{{ booking.id }}">Confirm Cancellation</h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Are you sure you want to cancel your booking for <strong>{{ booking.room.name }}</strong> on {{ booking.start_time|date:"M j, Y" }}?
+                                                        <br><br>
+                                                        <span class="text-muted small">This action cannot be undone, and the room will be made available to others.</span>
+                                                    </div>
+                                                    <div class="modal-footer bg-light">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Booking</button>
+                                                        <a href="{% url 'cancel_booking' booking.id %}" class="btn btn-danger">Yes, Cancel it</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% else %}
                                         <span class="text-muted small">-</span>
                                     {% endif %}
                                 </td>

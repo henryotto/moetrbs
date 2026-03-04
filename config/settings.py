@@ -124,6 +124,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = f"MoET Room Booking System <{EMAIL_HOST_USER}>"
+# EMAIL_USE_TLS=os.environ.get('EMAIL_USE_TLS')
+# EMAIL_USE_SSL=os.environ.get('EMAIL_USE_SSL')
 
 # Where to send users if they try to access a @login_required page
 LOGIN_URL = 'login' 

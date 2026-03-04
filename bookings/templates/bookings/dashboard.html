@@ -36,7 +36,7 @@
 
                             {% if data.next_booking %}
                                 <div class="alert alert-light border mt-2 p-2 small">
-                                    <strong>Next Meeting:</strong> {{ data.next_booking.start_time|time:"g:i A" }} - {{ data.next_booking.end_time|time:"g:i A" }}
+                                    <strong>Next Meeting:</strong> {{ data.next_booking.start_time|date:"M j, Y" }} | {{ data.next_booking.start_time|time:"g:i A" }} - {{ data.next_booking.end_time|time:"g:i A" }}
                                     ({{ data.next_booking.status }})
                                 </div>
                             {% endif %}
