@@ -1,12 +1,37 @@
-from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import BookingForm
 from django.http import JsonResponse
-from .models import Booking, Room
+from django.views.decorators.http import require_GET, require_POST
+from .models import Booking, BookingAuditEvent, Room
+from .models import BookingNotification
+from .services.notifications import queue_booking_notification
 from django.utils import timezone
+from calendar import month_name, monthcalendar
+
+
+def _is_htmx_request(request):
+    return request.headers.get('HX-Request') == 'true'
+
+
+def _pending_bookings_for(user):
+    pending_bookings = Booking.objects.filter(status='Pending')
+    if user.is_superuser:
+        return pending_bookings
+    return pending_bookings.filter(room__in=user.rooms_to_approve.all())
+
+
+def _record_booking_event(booking, event_type, actor, detail=''):
+    BookingAuditEvent.objects.create(
+        booking=booking,
+        event_type=event_type,
+        actor=actor,
+        detail=detail,
+    )
 
 # We use this decorator to ensure only logged-in Ministry staff can access this page
 @login_required 
@@ -22,29 +47,19 @@ def book_room(request):
             # We automatically attach the currently logged-in officer to the booking
             booking.officer = request.user 
             
-            # Now we save it. Our clean() method from Phase 2 will run automatically here.
-            booking.save() 
-            if form.is_valid():
-                booking = form.save(commit=False) 
-                booking.officer = request.user 
-                booking.save() 
-                
-                # --- NEW: EMAIL NOTIFICATION TO SECRETARY ---
-                subject = f"New Room Booking Request: {booking.room.name}"
-                message = f"A new booking request has been submitted by {booking.officer.username} for {booking.room.name}.\n\nPlease log in to the system to approve or reject this request."
-                
-                # Grab the email addresses of everyone assigned to approve this specific room
-                approver_emails = [user.email for user in booking.room.approvers.all() if user.email]
-                
-                # Only send the email if the room actually has approvers with email addresses set up
-                if approver_emails:
-                    send_mail(
-                        subject,
-                        message,
-                        None, # Uses DEFAULT_FROM_EMAIL from settings
-                        approver_emails, # Sends to the specific IT Officers or Secretaries
-                        fail_silently=True,
-                    )
+            try:
+                booking.save()
+            except IntegrityError:
+                form.add_error('start_time', 'Sorry, this room was just booked during this time.')
+                return render(request, 'bookings/book_room.html', {'form': form})
+            _record_booking_event(booking, BookingAuditEvent.EventType.REQUESTED, request.user)
+
+            queue_booking_notification(
+                booking,
+                BookingNotification.NotificationType.REQUESTED,
+                booking.room.approvers.all(),
+                request.build_absolute_uri(reverse('pending_approvals')),
+            )
             
             messages.success(request, f"Successfully requested {booking.room.name}! Pending approval.")
             return redirect('book_room')
@@ -60,23 +75,82 @@ def book_room(request):
     return render(request, 'bookings/book_room.html', {'form': form})
 
 
+@login_required
+@require_GET
+def booking_availability(request):
+    """Returns live booking guidance without replacing final server validation."""
+    required_fields = ('room', 'start_time', 'end_time')
+    if not all(request.GET.get(field) for field in required_fields):
+        return render(request, 'bookings/partials/availability_feedback.html')
+
+    booking = None
+    booking_id = request.GET.get('booking_id')
+    if booking_id:
+        booking = get_object_or_404(Booking, pk=booking_id, officer=request.user)
+
+    form = BookingForm(request.GET, instance=booking)
+    if form.is_valid():
+        room = form.cleaned_data['room']
+        features = []
+        if room.has_projector:
+            features.append('Projector')
+        if room.has_video_conferencing:
+            features.append('Video conferencing')
+        return render(request, 'bookings/partials/availability_feedback.html', {
+            'available': True,
+            'room': room,
+            'features': features,
+        })
+
+    errors = []
+    for field_errors in form.errors.values():
+        errors.extend(field_errors)
+    return render(request, 'bookings/partials/availability_feedback.html', {
+        'available': False,
+        'errors': errors,
+    })
+
+
 def calendar_view(request):
     """Renders the HTML page containing the calendar."""
     return render(request, 'bookings/calendar.html')
 
 
+def rooms(request):
+    """Public room directory with current approved-booking availability."""
+    now = timezone.now()
+    rooms_with_status = []
+    for room in Room.objects.filter(is_active=True).order_by('name'):
+        current_booking = room.bookings.filter(
+            status='Approved', start_time__lte=now, end_time__gte=now
+        ).first()
+        next_booking = room.bookings.filter(
+            status='Approved', start_time__gt=now
+        ).order_by('start_time').first()
+        rooms_with_status.append({
+            'room': room,
+            'current_booking': current_booking,
+            'next_booking': next_booking,
+        })
+    return render(request, 'bookings/rooms.html', {'rooms': rooms_with_status})
+
+
 def api_bookings(request):
-    """Outputs Approved AND Pending bookings for FullCalendar"""
-    bookings = Booking.objects.filter(status__in=['Approved', 'Pending']) 
+    """Outputs approved bookings for FullCalendar."""
+    bookings = Booking.objects.filter(status='Approved')
     
     events = []
     for booking in bookings:
         events.append({
-            'title': f"{booking.room.name} ({booking.status})",
+            'title': booking.purpose,
             'start': booking.start_time.isoformat(),
             'end': booking.end_time.isoformat(),
             'color': '#198754' if booking.status == 'Approved' else '#ffc107', # Green or Yellow
             'textColor': '#fff' if booking.status == 'Approved' else '#000',
+            'extendedProps': {
+                'purpose': booking.purpose,
+                'room': booking.room.name,
+            },
         })
     return JsonResponse(events, safe=False)
 
@@ -87,26 +161,41 @@ def dashboard(request):
     room_data = []
     
     for room in active_rooms:
-        # Check for both Approved and Pending bookings right now
+        # Pending requests are not published as room commitments.
         current_approved = room.bookings.filter(start_time__lte=now, end_time__gte=now, status='Approved').first() # type: ignore
-        current_pending = room.bookings.filter(start_time__lte=now, end_time__gte=now, status='Pending').first() # type: ignore
         
         is_occupied = bool(current_approved)
-        # It's only considered "Pending State" if it's not actually occupied by an approved meeting
-        is_pending = bool(current_pending) and not is_occupied
         
         # Find the very next upcoming meeting
-        next_booking = room.bookings.filter(start_time__gt=now, status__in=['Approved', 'Pending']).order_by('start_time').first() # type: ignore
+        next_booking = room.bookings.filter(start_time__gt=now, status='Approved').order_by('start_time').first() # type: ignore
         
         room_data.append({
             'room': room,
             'is_occupied': is_occupied,
-            'is_pending': is_pending,
-            'current_booking': current_approved or current_pending,
+            'current_booking': current_approved,
             'next_booking': next_booking
         })
         
-    context = {'room_data': room_data, 'current_time': now}
+    today = timezone.localdate()
+    available_room_count = sum(not data['is_occupied'] for data in room_data)
+    context = {
+        'room_data': room_data,
+        'current_time': now,
+        'upcoming_bookings': Booking.objects.filter(
+            status='Approved', start_time__gt=now
+        ).select_related('room').order_by('start_time'),
+        'total_room_count': active_rooms.count(),
+        'today_booking_count': Booking.objects.filter(
+            status='Approved', start_time__date=today
+        ).count(),
+        'available_room_count': available_room_count,
+        'pending_booking_count': Booking.objects.filter(status='Pending').count(),
+        'occupied_room_count': len(room_data) - available_room_count,
+        'calendar_month_name': month_name[today.month],
+        'calendar_year': today.year,
+        'calendar_weeks': monthcalendar(today.year, today.month),
+        'today_day': today.day,
+    }
     return render(request, 'bookings/dashboard.html', context)
 
 
@@ -122,11 +211,7 @@ def pending_approvals(request):
         return redirect('dashboard')
 
     # Fetch pending bookings ONLY for the rooms this user controls
-    if request.user.is_superuser:
-        # Superusers can see everything just in case
-        pending_bookings = Booking.objects.filter(status='Pending').order_by('start_time')
-    else:
-        pending_bookings = Booking.objects.filter(status='Pending', room__in=my_rooms).order_by('start_time')
+    pending_bookings = _pending_bookings_for(request.user).order_by('start_time')
         
     return render(request, 'bookings/pending_approvals.html', {'bookings': pending_bookings})
 
@@ -135,6 +220,7 @@ def pending_approvals(request):
 from django.core.exceptions import ValidationError
 
 @login_required
+@require_POST
 def process_booking(request, booking_id, action):
     booking = get_object_or_404(Booking, id=booking_id)
     
@@ -143,15 +229,37 @@ def process_booking(request, booking_id, action):
         messages.error(request, f"You are not assigned as an approver for {booking.room.name}.")
         return redirect('pending_approvals')
         
+    if action not in {'approve', 'reject'}:
+        messages.error(request, "Unknown booking action.")
+        return redirect('pending_approvals')
+
+    if booking.status != 'Pending':
+        messages.error(request, "Only pending bookings can be approved or rejected.")
+        return redirect('pending_approvals')
+
+    rejection_reason = request.POST.get('reason', '').strip()
+    if action == 'reject' and not rejection_reason:
+        messages.error(request, "A rejection reason is required.")
+        return redirect('pending_approvals')
+
     # 2. SET THE STATUS
     if action == 'approve':
         booking.status = 'Approved'
     elif action == 'reject':
         booking.status = 'Rejected'
+        booking.rejection_reason = rejection_reason
+    booking.decision_by = request.user
+    booking.decided_at = timezone.now()
 
     # 3. TRY TO SAVE (Catch any double-booking errors!)
     try:
         booking.save()
+        _record_booking_event(
+            booking,
+            BookingAuditEvent.EventType.APPROVED if action == 'approve' else BookingAuditEvent.EventType.REJECTED,
+            request.user,
+            rejection_reason,
+        )
         
         # Success Messages
         if action == 'approve':
@@ -159,17 +267,24 @@ def process_booking(request, booking_id, action):
         else:
             messages.warning(request, f"Booking for {booking.room.name} has been rejected.")
 
-        # --- EMAIL NOTIFICATION LOGIC ---
-        subject = f"Room Booking {booking.status}: {booking.room.name}"
-        message = f"Hello {booking.officer.first_name},\n\nYour request for {booking.room.name} on {booking.start_time.strftime('%Y-%m-%d %H:%M')} has been {booking.status}.\n\nThank you,\nMoET | Room Booking System"
-        
-        send_mail(
-            subject, message, None, [booking.officer.email], fail_silently=True
+        queue_booking_notification(
+            booking,
+            BookingNotification.NotificationType.APPROVED if action == 'approve' else BookingNotification.NotificationType.REJECTED,
+            [booking.officer],
+            request.build_absolute_uri(reverse('my_bookings')),
         )
 
-    except ValidationError as e:
+        if _is_htmx_request(request):
+            return render(request, 'bookings/partials/approval_update.html', {
+                'booking': booking,
+                'pending_count': _pending_bookings_for(request.user).count(),
+            })
+
+    except (IntegrityError, ValidationError) as e:
         # If the database rejects it (e.g., someone else was approved for this time slot first)
-        if hasattr(e, 'message_dict'):
+        if isinstance(e, IntegrityError):
+            messages.error(request, "Cannot approve: this room was just booked during this time.")
+        elif hasattr(e, 'message_dict'):
             for field, errors in e.message_dict.items():
                 for error in errors:
                     messages.error(request, f"Cannot approve: {error}")
@@ -208,15 +323,22 @@ def edit_booking(request, booking_id):
             
             # Since details changed, we put it back to Pending for the Secretary/IT to review
             updated_booking.status = 'Pending' 
-            updated_booking.save()
+            updated_booking.decision_by = None
+            updated_booking.decided_at = None
+            updated_booking.rejection_reason = ''
+            try:
+                updated_booking.save()
+            except IntegrityError:
+                form.add_error('start_time', 'Sorry, this room was just booked during this time.')
+                return render(request, 'bookings/book_room.html', {'form': form, 'is_edit': True})
+            _record_booking_event(updated_booking, BookingAuditEvent.EventType.UPDATED, request.user)
             
-            # --- NOTIFY APPROVERS OF THE CHANGE ---
-            subject = f"UPDATED Room Booking: {updated_booking.room.name}"
-            message = f"{updated_booking.officer.username} has updated their booking for {updated_booking.room.name}.\n\nPlease log in to review the new times."
-            approver_emails = [user.email for user in updated_booking.room.approvers.all() if user.email]
-            
-            if approver_emails:
-                send_mail(subject, message, None, approver_emails, fail_silently=True)
+            queue_booking_notification(
+                updated_booking,
+                BookingNotification.NotificationType.UPDATED,
+                updated_booking.room.approvers.all(),
+                request.build_absolute_uri(reverse('pending_approvals')),
+            )
 
             messages.success(request, "Booking updated successfully! It is now pending re-approval.")
             return redirect('my_bookings')
@@ -230,6 +352,7 @@ def edit_booking(request, booking_id):
 
 
 @login_required
+@require_POST
 def cancel_booking(request, booking_id):
     """Allows an officer to cancel their own booking."""
     # get_object_or_404 ensures they can only cancel THEIR OWN bookings
@@ -238,7 +361,22 @@ def cancel_booking(request, booking_id):
     # You can only cancel meetings that haven't been rejected or already cancelled
     if booking.status in ['Pending', 'Approved']:
         booking.status = 'Cancelled'
+        booking.cancelled_by = request.user
+        booking.cancelled_at = timezone.now()
+        booking.cancellation_reason = request.POST.get('reason', '').strip()
         booking.save()
+        _record_booking_event(
+            booking,
+            BookingAuditEvent.EventType.CANCELLED,
+            request.user,
+            booking.cancellation_reason,
+        )
+        queue_booking_notification(
+            booking,
+            BookingNotification.NotificationType.CANCELLED,
+            booking.room.approvers.all(),
+            request.build_absolute_uri(reverse('pending_approvals')),
+        )
         messages.success(request, f"Your booking for {booking.room.name} has been cancelled.")
         
         # Optional: You could add email logic here to notify the IT Team/Secretary 

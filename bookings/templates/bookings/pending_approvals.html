@@ -2,105 +2,18 @@
 
 {% block title %}Pending Approvals | MoET{% endblock %}
 
+{% block extra_head %}
+<style>
+  .approvals-shell { max-width: 1320px; margin: 2rem auto; padding: 0 1rem; }
+  .approvals-heading { color: #073b4c; }
+  .approvals-card { border: 0; border-radius: 1rem; overflow: hidden; }
+  .approvals-table thead th { background: #073b4c; color: #fff; border: 0; font-size: .82rem; letter-spacing: .02em; padding: 1rem; white-space: nowrap; }
+  .approvals-table tbody td { padding: 1rem; border-color: #e7eeee; }
+  .approval-count { background: #fff3bf; color: #735c00; padding: .55rem .8rem; border-radius: 999px; }
+  .approval-datetime { min-width: 185px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Pending Room Requests</h2>
-        <span class="badge bg-warning text-dark fs-6">{{ bookings.count }} Request(s)</span>
-    </div>
-
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Room</th>
-                            <th>Requested By</th>
-                            <th>Purpose</th>
-                            <th>Start Time</th>
-                            <th>End Time</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for booking in bookings %}
-                            <tr>
-                                <td class="fw-bold">{{ booking.room.name }}</td>
-                                <td>
-                                    {{ booking.officer.get_full_name|default:booking.officer.username }}
-                                    <br>
-                                    <small class="text-muted">{{ booking.officer.email }}</small>
-                                </td>
-                                <td>{{ booking.purpose }}</td>
-                                <td>{{ booking.start_time|date:"D, M j, Y, g:i A" }}</td>
-                                <td>{{ booking.end_time|date:"g:i A" }}</td>
-                                
-                                <td class="text-center">
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ booking.id }}">
-                                            Approve
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ booking.id }}">
-                                            Reject
-                                        </button>
-                                    </div>
-
-                                    <div class="modal fade" id="approveModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content text-start">
-                                                <div class="modal-header bg-success text-white">
-                                                    <h5 class="modal-title">Approve Booking</h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    Are you sure you want to approve this booking for <strong>{{ booking.officer.get_full_name|default:booking.officer.username }}</strong>?
-                                                    <br><br>
-                                                    Room: {{ booking.room.name }}<br>
-                                                    Time: {{ booking.start_time|date:"M j, Y, g:i A" }}
-                                                </div>
-                                                <div class="modal-footer bg-light">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                    <a href="{% url 'process_booking' booking.id 'approve' %}" class="btn btn-success">Confirm Approval</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="modal fade" id="rejectModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content text-start">
-                                                <div class="modal-header bg-danger text-white">
-                                                    <h5 class="modal-title">Reject Booking</h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    Are you sure you want to <strong>reject</strong> this booking request?
-                                                    <br><br>
-                                                    An email notification will be sent to the officer informing them that the room is not available.
-                                                </div>
-                                                <div class="modal-footer bg-light">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                    <a href="{% url 'process_booking' booking.id 'reject' %}" class="btn btn-danger">Confirm Rejection</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <h5 class="mb-0">All caught up!</h5>
-                                    <p class="mb-0">There are no pending booking requests at this time.</p>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+<main class="approvals-shell"><div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3"><div><p class="text-uppercase small fw-bold text-success mb-1" style="letter-spacing:.1em">Approval queue</p><h1 class="approvals-heading h2 mb-2">Pending room requests</h1><p class="text-muted mb-0">Approve a booking only after confirming the room and time are suitable.</p></div><span id="approval-count" class="approval-count fw-semibold">{{ bookings.count }} request{{ bookings.count|pluralize }}</span></div><div id="approval-feedback" aria-live="polite" class="mb-3"></div><section class="card approvals-card shadow-sm"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0 approvals-table"><thead><tr><th>Room</th><th>Requested by</th><th>Purpose</th><th>Start</th><th>End</th><th class="text-center">Decision</th></tr></thead><tbody id="approval-table-body">{% for booking in bookings %}<tr><td class="fw-semibold">{{ booking.room.name }}</td><td>{{ booking.officer.get_full_name|default:booking.officer.username }}<span class="d-block text-muted small">{{ booking.officer.email }}</span></td><td>{{ booking.purpose }}</td><td class="approval-datetime">{{ booking.start_time|date:"D, M j, Y" }}<span class="d-block text-muted small">{{ booking.start_time|time:"g:i A" }}</span></td><td class="approval-datetime">{{ booking.end_time|date:"D, M j, Y" }}<span class="d-block text-muted small">{{ booking.end_time|time:"g:i A" }}</span></td><td class="text-center"><div class="btn-group" role="group"><button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ booking.id }}">Approve</button><button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ booking.id }}">Reject</button></div><div class="modal fade" id="approveModal{{ booking.id }}" tabindex="-1" aria-labelledby="approveModalLabel{{ booking.id }}" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content text-start"><div class="modal-header bg-success text-white"><h2 class="modal-title fs-5" id="approveModalLabel{{ booking.id }}">Approve booking</h2><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><p>Approve this booking for <strong>{{ booking.officer.get_full_name|default:booking.officer.username }}</strong>?</p><dl class="row small mb-0"><dt class="col-4">Room</dt><dd class="col-8">{{ booking.room.name }}</dd><dt class="col-4">Time</dt><dd class="col-8">{{ booking.start_time|date:"D, M j, Y, g:i A" }} – {{ booking.end_time|date:"D, M j, Y, g:i A" }}</dd></dl></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><form method="post" action="{% url 'process_booking' booking.id 'approve' %}" class="d-inline" hx-post="{% url 'process_booking' booking.id 'approve' %}" hx-target="closest tr" hx-swap="delete">{% csrf_token %}<button type="submit" class="btn btn-success" data-bs-dismiss="modal">Confirm approval</button></form></div></div></div></div><div class="modal fade" id="rejectModal{{ booking.id }}" tabindex="-1" aria-labelledby="rejectModalLabel{{ booking.id }}" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content text-start"><div class="modal-header bg-danger text-white"><h2 class="modal-title fs-5" id="rejectModalLabel{{ booking.id }}">Reject booking</h2><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><form method="post" action="{% url 'process_booking' booking.id 'reject' %}" hx-post="{% url 'process_booking' booking.id 'reject' %}" hx-target="closest tr" hx-swap="delete">{% csrf_token %}<div class="modal-body"><p class="mb-3">Reject this booking? Please include a reason for the requester.</p><label for="rejection-reason-{{ booking.id }}" class="form-label fw-semibold">Reason for rejection</label><textarea id="rejection-reason-{{ booking.id }}" name="reason" class="form-control" rows="3" required></textarea></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger" data-bs-dismiss="modal">Confirm rejection</button></div></form></div></div></div></td></tr>{% empty %}<tr><td colspan="6" class="text-center py-5"><h2 class="h5 mb-2">All caught up</h2><p class="text-muted mb-0">There are no pending booking requests at this time.</p></td></tr>{% endfor %}</tbody></table></div></div></section></main>
 {% endblock %}

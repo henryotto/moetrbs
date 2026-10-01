@@ -1,0 +1,22 @@
+Ministry of Education and Training — Room Booking System
+
+Hello {{ notification.recipient_name }},
+
+{% if notification.notification_type == 'requested' %}A new room booking request is waiting for your review.{% elif notification.notification_type == 'updated' %}A room booking request has changed and is waiting for your review.{% elif notification.notification_type == 'approved' %}Your room booking request has been approved.{% elif notification.notification_type == 'rejected' %}Your room booking request has been rejected.{% else %}A room booking has been cancelled.{% endif %}
+
+Purpose: {{ booking.purpose }}
+Room: {{ booking.room.name }}
+Location: {{ booking.room.location }}
+Capacity: {{ booking.room.capacity }} people
+Start: {{ booking.start_time|date:"l, j F Y, g:i A" }}
+End: {{ booking.end_time|date:"l, j F Y, g:i A" }}
+Requested by: {{ booking.officer.get_full_name|default:booking.officer.username }}
+{% if notification.notification_type == 'approved' or notification.notification_type == 'rejected' %}{% if booking.decision_by %}Decided by: {{ booking.decision_by.get_full_name|default:booking.decision_by.username }}
+{% if booking.decided_at %}Decided on: {{ booking.decided_at|date:"j F Y, g:i A" }}
+{% endif %}{% endif %}{% endif %}{% if notification.notification_type == 'rejected' and booking.rejection_reason %}Reason for rejection: {{ booking.rejection_reason }}
+{% endif %}{% if notification.notification_type == 'cancelled' and booking.cancellation_reason %}Cancellation note: {{ booking.cancellation_reason }}
+{% endif %}
+{% if notification.action_url %}Open the Room Booking System: {{ notification.action_url }}
+{% endif %}{% if notification.notification_type == 'requested' or notification.notification_type == 'updated' %}Sign in to approve or reject this request in the booking system.
+{% endif %}
+This is an automated message. Please do not reply.

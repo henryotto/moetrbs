@@ -2,91 +2,18 @@
 
 {% block title %}My Bookings | MoET{% endblock %}
 
+{% block extra_head %}
+<style>
+  .management-shell { max-width: 1320px; margin: 2rem auto; padding: 0 1rem; }
+  .management-heading { color: #073b4c; }
+  .management-card { border: 0; border-radius: 1rem; overflow: hidden; }
+  .management-table thead th { background: #073b4c; color: #fff; border: 0; font-size: .82rem; letter-spacing: .02em; padding: 1rem; white-space: nowrap; }
+  .management-table tbody td { padding: 1rem; border-color: #e7eeee; }
+  .status-badge { padding: .45rem .65rem; font-weight: 600; border-radius: 999px; }
+  .booking-datetime { min-width: 180px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">My Booking History</h2>
-
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Room</th>
-                            <th>Purpose</th>
-                            <th>Start Time</th>
-                            <th>End Time</th>
-                            <th>Status</th>
-                            <th class="text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for booking in bookings %}
-                            <tr>
-                                <td class="fw-bold">{{ booking.room.name }}</td>
-                                <td>{{ booking.purpose }}</td>
-                                <td>{{ booking.start_time|date:"D, M j, Y, g:i A" }}</td>
-                                <td>{{ booking.end_time|date:"g:i A" }}</td>
-                                <td>
-                                    {% if booking.status == 'Approved' %}
-                                        <span class="badge bg-success">Approved</span>
-                                    {% elif booking.status == 'Pending' %}
-                                        <span class="badge bg-warning text-dark">Pending</span>
-                                    {% elif booking.status == 'Rejected' %}
-                                        <span class="badge bg-danger">Rejected</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Cancelled</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-center">
-                                    {% if booking.status == 'Pending' or booking.status == 'Approved' %}
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'edit_booking' booking.id %}" class="btn btn-sm btn-outline-dark">
-                                                Edit
-                                            </a>
-                                            
-                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal{{ booking.id }}">
-                                                Cancel
-                                            </button>
-                                        </div>
-
-                                        <div class="modal fade" id="cancelModal{{ booking.id }}" tabindex="-1" aria-labelledby="cancelModalLabel{{ booking.id }}" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content text-start">
-                                                    <div class="modal-header bg-danger text-white">
-                                                        <h5 class="modal-title" id="cancelModalLabel{{ booking.id }}">Confirm Cancellation</h5>
-                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        Are you sure you want to cancel your booking for <strong>{{ booking.room.name }}</strong> on {{ booking.start_time|date:"M j, Y" }}?
-                                                        <br><br>
-                                                        <span class="text-muted small">This action cannot be undone, and the room will be made available to others.</span>
-                                                    </div>
-                                                    <div class="modal-footer bg-light">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Booking</button>
-                                                        <a href="{% url 'cancel_booking' booking.id %}" class="btn btn-danger">Yes, Cancel it</a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% else %}
-                                        <span class="text-muted small">-</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <h5 class="mb-0">No bookings yet!</h5>
-                                    <p class="mb-0">When you request a room, it will appear here.</p>
-                                    <a href="{% url 'book_room' %}" class="btn btn-success mt-3">Book a Room</a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+<main class="management-shell"><div class="d-flex flex-wrap gap-3 justify-content-between align-items-end mb-4"><div><p class="text-uppercase small fw-bold text-success mb-1" style="letter-spacing:.1em">Your room requests</p><h1 class="management-heading h2 mb-2">My bookings</h1><p class="text-muted mb-0">Review every request and manage bookings that are still active.</p></div><a href="{% url 'book_room' %}" class="btn btn-success">Book a room</a></div><section class="card management-card shadow-sm"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0 management-table"><thead><tr><th>Room</th><th>Purpose</th><th>Start</th><th>End</th><th>Status</th><th class="text-center">Actions</th></tr></thead><tbody>{% for booking in bookings %}<tr><td class="fw-semibold">{{ booking.room.name }}</td><td>{{ booking.purpose }}</td><td class="booking-datetime">{{ booking.start_time|date:"D, M j, Y" }}<span class="d-block text-muted small">{{ booking.start_time|time:"g:i A" }}</span></td><td class="booking-datetime">{{ booking.end_time|date:"D, M j, Y" }}<span class="d-block text-muted small">{{ booking.end_time|time:"g:i A" }}</span></td><td>{% if booking.status == 'Approved' %}<span class="badge text-bg-success status-badge">Approved</span>{% elif booking.status == 'Pending' %}<span class="badge text-bg-warning text-dark status-badge">Pending</span>{% elif booking.status == 'Rejected' %}<span class="badge text-bg-danger status-badge">Rejected</span>{% else %}<span class="badge text-bg-secondary status-badge">Cancelled</span>{% endif %}</td><td class="text-center">{% if booking.status == 'Pending' or booking.status == 'Approved' %}<div class="btn-group" role="group"><a href="{% url 'edit_booking' booking.id %}" class="btn btn-sm btn-outline-secondary">Edit</a><button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal{{ booking.id }}">Cancel</button></div><div class="modal fade" id="cancelModal{{ booking.id }}" tabindex="-1" aria-labelledby="cancelModalLabel{{ booking.id }}" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content text-start"><div class="modal-header bg-danger text-white"><h2 class="modal-title fs-5" id="cancelModalLabel{{ booking.id }}">Cancel booking</h2><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><form id="cancel-booking-{{ booking.id }}" method="post" action="{% url 'cancel_booking' booking.id %}">{% csrf_token %}<div class="modal-body"><p>Cancel your booking for <strong>{{ booking.room.name }}</strong>?</p><p class="mb-3 text-muted small">{{ booking.start_time|date:"D, M j, Y, g:i A" }} – {{ booking.end_time|date:"D, M j, Y, g:i A" }}</p><label for="cancellation-reason-{{ booking.id }}" class="form-label fw-semibold">Cancellation note <span class="text-muted fw-normal">(optional)</span></label><textarea id="cancellation-reason-{{ booking.id }}" name="reason" class="form-control" rows="3"></textarea></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep booking</button><button type="submit" class="btn btn-danger">Cancel booking</button></div></form></div></div></div>{% else %}<span class="text-muted small">No actions available</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="6" class="text-center py-5"><h2 class="h5 mb-2">No bookings yet</h2><p class="text-muted mb-3">When you request a room, it will appear here.</p><a href="{% url 'book_room' %}" class="btn btn-success">Book a room</a></td></tr>{% endfor %}</tbody></table></div></div></section></main>
 {% endblock %}

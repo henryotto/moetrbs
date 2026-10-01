@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ notification.get_notification_type_display }} | MoET Room Booking System</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f6f5;color:#20323e;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#f3f6f5;">
+    <tr><td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;border-collapse:separate;border-spacing:0;background:#ffffff;border:1px solid #dfe9e7;border-radius:10px;">
+        <tr><td style="padding:20px 28px;background:#004b43;color:#ffffff;border-radius:9px 9px 0 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td width="64" valign="middle" style="width:64px;"><img src="cid:moet-logo" width="56" height="56" alt="MoET" style="display:block;width:56px;height:56px;object-fit:contain;border:0;"></td>
+            <td valign="middle" style="padding-left:12px;"><div style="font-size:18px;line-height:24px;font-weight:bold;">Ministry of Education and Training</div><div style="font-size:13px;line-height:20px;color:#d4e9e3;">Room Booking System</div></td>
+          </tr></table>
+        </td></tr>
+        <tr><td style="padding:30px 32px 26px;background:{% if notification.notification_type == 'approved' %}#ebf8f1{% elif notification.notification_type == 'rejected' %}#fff1ef{% elif notification.notification_type == 'cancelled' %}#f0f3f5{% else %}#f0f7f8{% endif %};">
+          <div style="font-size:11px;letter-spacing:2px;font-weight:bold;color:#006658;text-transform:uppercase;">{{ notification.get_notification_type_display }}</div>
+          <h1 style="margin:8px 0 10px;color:#073b3b;font-size:27px;line-height:33px;">
+            {% if notification.notification_type == 'requested' %}New Room Booking Request{% elif notification.notification_type == 'updated' %}Room Booking Request Updated{% elif notification.notification_type == 'approved' %}Your Room Booking Has Been Approved{% elif notification.notification_type == 'rejected' %}Your Room Booking Was Not Approved{% else %}Room Booking Cancelled{% endif %}
+          </h1>
+          <p style="margin:0;font-size:15px;line-height:23px;color:#435764;">
+            {% if notification.notification_type == 'requested' %}A new room booking request is waiting for your review.{% elif notification.notification_type == 'updated' %}A room booking request has changed and is waiting for your review.{% elif notification.notification_type == 'approved' %}Your room booking request has been approved.{% elif notification.notification_type == 'rejected' %}Your room booking request has been rejected.{% else %}A room booking has been cancelled.{% endif %}
+          </p>
+        </td></tr>
+        <tr><td style="padding:28px 32px 32px;">
+          <p style="margin:0 0 8px;font-size:15px;line-height:22px;">Hello {{ notification.recipient_name }},</p>
+          <p style="margin:0 0 22px;font-size:14px;line-height:22px;color:#435764;">Please see the booking details below.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border:1px solid #dfe8e7;border-radius:8px;border-collapse:separate;border-spacing:0;">
+            <tr><td width="50%" valign="top" style="padding:16px 18px;border-bottom:1px solid #e8eeee;"><div style="font-size:12px;font-weight:bold;color:#50636d;">START</div><div style="padding-top:5px;font-size:14px;line-height:21px;color:#152e36;">{{ booking.start_time|date:"l, j F Y" }}<br>{{ booking.start_time|time:"g:i A" }}</div></td><td width="50%" valign="top" style="padding:16px 18px;border-bottom:1px solid #e8eeee;"><div style="font-size:12px;font-weight:bold;color:#50636d;">END</div><div style="padding-top:5px;font-size:14px;line-height:21px;color:#152e36;">{{ booking.end_time|date:"l, j F Y" }}<br>{{ booking.end_time|time:"g:i A" }}</div></td></tr>
+            <tr><td valign="top" style="padding:16px 18px;border-bottom:1px solid #e8eeee;"><div style="font-size:12px;font-weight:bold;color:#50636d;">ROOM</div><div style="padding-top:5px;font-size:14px;line-height:21px;color:#152e36;">{{ booking.room.name }}</div><div style="font-size:12px;line-height:19px;color:#657985;">{{ booking.room.location }}</div></td><td valign="top" style="padding:16px 18px;border-bottom:1px solid #e8eeee;"><div style="font-size:12px;font-weight:bold;color:#50636d;">CAPACITY</div><div style="padding-top:5px;font-size:14px;line-height:21px;color:#152e36;">{{ booking.room.capacity }} people</div></td></tr>
+            <tr><td colspan="2" style="padding:16px 18px;border-bottom:1px solid #e8eeee;"><div style="font-size:12px;font-weight:bold;color:#50636d;">PURPOSE</div><div style="padding-top:5px;font-size:14px;line-height:21px;color:#152e36;">{{ booking.purpose }}</div></td></tr>
+            <tr><td colspan="2" style="padding:16px 18px;{% if notification.notification_type == 'approved' and booking.decision_by or notification.notification_type == 'rejected' and booking.decision_by %}border-bottom:1px solid #e8eeee;{% endif %}"><div style="font-size:12px;font-weight:bold;color:#50636d;">REQUESTED BY</div><div style="padding-top:5px;font-size:14px;line-height:21px;color:#152e36;">{{ booking.officer.get_full_name|default:booking.officer.username }}</div></td></tr>
+            {% if notification.notification_type == 'approved' or notification.notification_type == 'rejected' %}{% if booking.decision_by %}<tr><td colspan="2" style="padding:16px 18px;"><div style="font-size:12px;font-weight:bold;color:#50636d;">DECIDED BY</div><div style="padding-top:5px;font-size:14px;line-height:21px;color:#152e36;">{{ booking.decision_by.get_full_name|default:booking.decision_by.username }}{% if booking.decided_at %}<br><span style="font-size:12px;color:#657985;">{{ booking.decided_at|date:"j F Y, g:i A" }}</span>{% endif %}</div></td></tr>{% endif %}{% endif %}
+          </table>
+          {% if notification.notification_type == 'rejected' and booking.rejection_reason %}<p style="margin:18px 0 0;padding:14px 16px;background:#fff1ef;border-left:3px solid #c53d32;font-size:14px;line-height:21px;"><strong>Reason for rejection</strong><br>{{ booking.rejection_reason }}</p>{% endif %}
+          {% if notification.notification_type == 'cancelled' and booking.cancellation_reason %}<p style="margin:18px 0 0;padding:14px 16px;background:#f0f3f5;border-left:3px solid #647680;font-size:14px;line-height:21px;"><strong>Cancellation note</strong><br>{{ booking.cancellation_reason }}</p>{% endif %}
+          {% if notification.action_url %}<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px;"><tr><td bgcolor="#007565" style="border-radius:6px;"><a href="{{ notification.action_url }}" style="display:inline-block;padding:13px 20px;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;">{% if notification.notification_type == 'requested' or notification.notification_type == 'updated' %}Review booking request{% elif notification.notification_type == 'approved' %}View my bookings{% else %}Open booking system{% endif %}</a></td></tr></table>{% endif %}
+          {% if notification.notification_type == 'requested' or notification.notification_type == 'updated' %}<p style="margin:16px 0 0;color:#657985;font-size:12px;line-height:18px;">Sign in to review the request. Approval and rejection are completed in the booking system.</p>{% endif %}
+        </td></tr>
+        <tr><td style="padding:18px 32px;background:#17252c;color:#e7efee;border-radius:0 0 9px 9px;"><div style="font-size:13px;font-weight:bold;">Ministry of Education and Training</div><div style="margin-top:4px;font-size:12px;color:#bcccca;">Room Booking System · This is an automated message. Please do not reply.</div></td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

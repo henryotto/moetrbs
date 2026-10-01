@@ -3,35 +3,53 @@
 {% block title %}Calendar | MoET{% endblock %}
 
 {% block extra_head %}
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var calendarEl = document.getElementById('calendar');
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: 'timeGridWeek',
-          headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-          },
-          slotMinTime: '07:00:00',
-          slotMaxTime: '17:00:00',
-          allDaySlot: false,
-          events: '/api/bookings/',
-          selectable: true,
-          select: function(info) {
-              window.location.href = "{% url 'book_room' %}";
-          }
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<style>
+  .page-hero { background: linear-gradient(120deg, #003f38, #007565); color: #fff; border-radius: 0 0 1.25rem 1.25rem; margin: 0 calc(50% - 50vw); padding: 2.5rem max(1.5rem, calc((100vw - 1320px)/2)); }
+  .page-shell { max-width: 1320px; margin: 0 auto; padding: 1.5rem; }
+  .calendar-card { border: 0; border-radius: 1rem; }
+  .fc .fc-button-primary { background: #007565; border-color: #007565; }
+  .fc .fc-button-primary:hover, .fc .fc-button-primary:not(:disabled).fc-button-active { background: #005b50; border-color: #005b50; }
+  .fc .fc-toolbar-title { font-weight: 700; color: #18323b; }
+  .fc-theme-standard td, .fc-theme-standard th { border-color: #e4ebeb; }
+  .fc .fc-col-header-cell-cushion, .fc .fc-daygrid-day-number { color: #007565; font-weight: 600; text-decoration: none; }
+  .fc .fc-day-other .fc-daygrid-day-number { color: #a9bdb9; }
+  .fc .fc-day-today .fc-daygrid-day-number { color: #005b50; }
+  .fc .fc-daygrid-dot-event .fc-event-time, .fc .fc-daygrid-dot-event .fc-event-title { color: #263b3a; }
+  .fc-event { cursor: help; }
+  .tooltip-inner { text-align: left; white-space: pre-line; }
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+      slotMinTime: '07:00:00', slotMaxTime: '17:00:00', allDaySlot: false,
+      events: '{% url "api_bookings" %}', selectable: true,
+      eventDidMount: function (info) {
+        var start = info.event.start.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        var end = info.event.end ? info.event.end.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
+        var details = [
+          info.event.extendedProps.purpose,
+          'Room: ' + info.event.extendedProps.room,
+          start + (end ? ' – ' + end : '')
+        ].filter(Boolean).join('\n');
+        info.el._bookingTooltip = bootstrap.Tooltip.getOrCreateInstance(info.el, {
+          title: details, placement: 'top', container: 'body', trigger: 'hover focus'
         });
-        calendar.render();
-      });
-    </script>
+      },
+      eventWillUnmount: function (info) {
+        if (info.el._bookingTooltip) info.el._bookingTooltip.dispose();
+      },
+      select: function () { window.location.href = '{% url "book_room" %}'; }
+    });
+    calendar.render();
+  });
+</script>
 {% endblock %}
 
 {% block content %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div id='calendar'></div>
-        </div>
-    </div>
+<section class="page-hero"><p class="text-uppercase small fw-bold mb-2" style="letter-spacing:.12em">Room schedule</p><h1 class="h2 mb-2">Booking Calendar</h1><p class="mb-0 opacity-75">Browse all approved room bookings and select a time to make a request.</p></section>
+<main class="page-shell"><div class="card calendar-card shadow-sm"><div class="card-body p-3 p-lg-4"><div class="d-flex justify-content-between align-items-start mb-4"><div><h2 class="h4 mb-1">Room availability</h2><p class="text-muted mb-0">Only confirmed bookings are shown.</p></div><a class="btn btn-success" href="{% url 'book_room' %}">Book a room</a></div><div id="calendar"></div></div></div></main>
 {% endblock %}

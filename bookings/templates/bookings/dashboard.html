@@ -1,74 +1,49 @@
 {% extends 'bookings/base.html' %}
+{% load static %}
 
-{% block title %}Dashboard | MoET{% endblock %}
+{% block title %}Room Booking System | MoET{% endblock %}
+
+{% block extra_head %}
+<style>
+  .dash-shell { margin: 0 calc(50% - 50vw); background: #f4f7f7; padding-bottom: 2rem; }
+  .dash-inner { max-width: 1480px; margin: auto; padding: 0 1.5rem; }
+  .dash-hero { min-height: 215px; padding: 3rem max(1.5rem, calc((100vw - 1480px)/2)); background: linear-gradient(90deg, rgba(0,56,50,.86), rgba(0,56,50,.48) 38%, rgba(0,56,50,.04) 70%), url('{% static "bookings/images/meeting-room-hero.png" %}') center/cover; color: #fff; }
+  .dash-hero h1 { font-size: clamp(2rem, 4vw, 3.1rem); font-weight: 700; }
+  .dash-eyebrow { letter-spacing: .14em; font-size: .75rem; font-weight: 700; }
+  .metrics { margin-top: 1.25rem; }
+  .metric, .dash-panel { border: 0; border-radius: 12px; }
+  .metric-number { font-size: 1.9rem; font-weight: 700; color: #073b4c; }
+  .metric-label { font-weight: 600; }
+  .metric-icon { width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center; background: #d7f5e8; color: #006658; }
+  .metric-icon::after { font-family: "bootstrap-icons"; font-size: 1.7rem; line-height: 1; }
+  .metric-blue { background: #dbeeff; color: #1266cb; }
+  .metric-red { background: #ffe1e1; color: #c92a2a; }
+  .metrics .col:nth-child(1) .metric-icon::after { content: "\f87d"; }
+  .metrics .col:nth-child(2) .metric-icon::after { content: "\f1e2"; }
+  .metrics .col:nth-child(3) .metric-icon::after { content: "\f4cf"; }
+  .metrics .col:nth-child(4) .metric-icon::after { content: "\f1f5"; }
+  .dash-grid { display: grid; grid-template-columns: minmax(240px,.85fr) minmax(420px,1.55fr) minmax(260px,.9fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+  .quick-link { display: flex; align-items: center; justify-content: space-between; padding: .8rem 1rem; margin: .55rem 0; border: 1px solid #e2e8ea; border-radius: 8px; color: #19313b; text-decoration: none; }
+  .quick-link.primary { background: #007565; color: #fff; border-color: #007565; }
+  .room-row { display: grid; grid-template-columns: 130px 1fr auto; gap: 1rem; align-items: center; padding: .65rem 0; border-bottom: 1px solid #e4ebeb; }
+  .room-row:last-child, .booking-item:last-child { border-bottom: 0; }
+  .room-thumb { width: 130px; height: 86px; object-fit: cover; border-radius: 8px; }
+  .room-meta, .booking-room { font-size: .88rem; color: #60737a; }
+  .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #17a36b; margin-right: .35rem; }
+  .status-dot.busy { background: #d63b32; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: .35rem; text-align: center; font-size: .85rem; }
+  .calendar-grid span { padding: .3rem 0; }
+  .calendar-today { background: #007565; color: #fff; border-radius: 6px; }
+  .booking-item { display: grid; grid-template-columns: 74px 1fr; gap: .45rem; padding: .65rem 0; border-bottom: 1px solid #e4ebeb; }
+  .booking-time { font-weight: 700; font-size: .78rem; }
+  .booking-name { font-weight: 600; font-size: .9rem; }
+  .dash-right .dash-panel:last-child .card-body > .d-flex { border-bottom: 1px solid #e4ebeb; padding-top: .55rem !important; padding-bottom: .55rem !important; }
+  .dash-right .dash-panel:last-child .card-body > .d-flex:last-child { border-bottom: 0; }
+  @media(max-width:1100px) { .dash-grid { grid-template-columns: 1fr 1fr; } .dash-right { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; } .dash-right .dash-panel { height: 100%; } }
+  @media(max-width:720px) { .dash-grid { display: block; } .dash-grid > * { margin-bottom: 1rem; } .dash-right { display: block; } .dash-right .dash-panel { margin-bottom: 1rem; } .room-row { grid-template-columns: 84px 1fr; } .room-thumb { width: 84px; height: 66px; } .room-row .btn { grid-column: 2; } .dash-hero { min-height: 190px; } }
+</style>
+{% endblock %}
 
 {% block content %}
-    <h2 class="mb-4">Live Room Status</h2>
-    <p class="text-muted">Current System Time: {{ current_time|date:"F j, Y, g:i a" }}</p>
-    
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        {% for data in room_data %}
-            <div class="col">
-                <div class="card h-100 shadow-sm {% if data.is_occupied %}border-danger{% elif data.is_pending %}border-warning{% else %}border-success{% endif %}">
-                    
-                    <div class="card-header {% if data.is_occupied %}bg-danger text-white{% elif data.is_pending %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
-                        <h5 class="card-title mb-0">{{ data.room.name }}</h5>
-                    </div>
-                    
-                    <div class="card-body">
-                        <p class="card-text"><strong>Location:</strong> {{ data.room.location }}</p>
-                        <p class="card-text"><strong>Capacity:</strong> {{ data.room.capacity }} pax</p>
-                        <hr>
-                        
-                        {% if data.is_occupied %}
-                            <h6 class="text-danger">🔴 Currently Occupied</h6>
-                            <p class="mb-1"><strong>Booked by:</strong> {{ data.current_booking.officer.get_full_name|default:data.current_booking.officer.username }}</p>
-                            <p class="mb-0 text-muted small">Until: {{ data.current_booking.end_time|time:"g:i A" }}</p>
-                        
-                        {% elif data.is_pending %}
-                            <h6 class="text-warning text-dark">🟡 Pending Approval</h6>
-                            <p class="mb-1"><strong>Requested by:</strong> {{ data.current_booking.officer.get_full_name|default:data.current_booking.officer.username }}</p>
-                            <p class="text-muted small mb-0">This room is tentatively booked.</p>
-
-                        {% else %}
-                            <h6 class="text-success">🟢 Vacant</h6>
-                            <p class="text-muted">Ready for use.</p>
-
-                            {% if data.next_booking %}
-                                <div class="alert alert-light border mt-2 p-2 small">
-                                    <strong>Next Meeting:</strong> {{ data.next_booking.start_time|date:"M j, Y" }} | {{ data.next_booking.start_time|time:"g:i A" }} - {{ data.next_booking.end_time|time:"g:i A" }}
-                                    ({{ data.next_booking.status }})
-                                </div>
-                            {% endif %}
-
-                            <a href="{% url 'book_room' %}?room={{ data.room.id }}" class="btn btn-sm btn-outline-success mt-2">Book Now</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
-            {% comment %} <div class="col">
-                <div class="card h-100 shadow-sm {% if data.is_occupied %}border-danger{% else %}border-success{% endif %}">
-                    <div class="card-header text-white {% if data.is_occupied %}bg-danger{% else %}bg-success{% endif %}">
-                        <h5 class="card-title mb-0">{{ data.room.name }}</h5>
-                    </div>
-
-                    <div class="card-body">
-                        <p class="card-text"><strong>Location:</strong> {{ data.room.location }}</p>
-                        <p class="card-text"><strong>Capacity:</strong> {{ data.room.capacity }} people</p>
-                        <hr>
-                        {% if data.is_occupied %}
-                            <h6 class="text-danger">🔴 Currently Occupied</h6>
-                            <p class="mb-1"><strong>Booked by:</strong> {{ data.current_booking.officer.get_full_name|default:data.current_booking.officer.username }}</p>
-                            <p class="mb-1"><strong>Purpose:</strong> {{ data.current_booking.purpose }}</p>
-                            <p class="mb-0 text-muted small">Until: {{ data.current_booking.end_time|time:"g:i A" }}</p>
-                        {% else %}
-                            <h6 class="text-success">🟢 Vacant</h6>
-                            <p class="text-muted">Ready for use.</p>
-                            <a href="{% url 'book_room' %}?room={{ data.room.id }}" class="btn btn-sm btn-outline-success mt-2">Book Now</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div> {% endcomment %}
-    </div>
+<div class="dash-shell"><section class="dash-hero"><p class="dash-eyebrow mb-2">MINISTRY OF EDUCATION AND TRAINING</p><h1 class="mb-1">Room Booking System</h1><p class="lead mb-0">Find and book meeting rooms easily and efficiently.</p></section><main class="dash-inner"><div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 metrics"><div class="col"><div class="card metric h-100"><div class="card-body d-flex gap-3 align-items-center"><span class="metric-icon" aria-hidden="true"></span><div><div class="metric-number">{{ total_room_count }}</div><div class="metric-label">Total Rooms</div><small class="text-muted">Across all locations</small></div></div></div></div><div class="col"><div class="card metric h-100"><div class="card-body d-flex gap-3 align-items-center"><span class="metric-icon metric-blue" aria-hidden="true"></span><div><div class="metric-number">{{ today_booking_count }}</div><div class="metric-label">Today's Bookings</div><small class="text-muted">{{ current_time|date:"d F Y" }}</small></div></div></div></div><div class="col"><div class="card metric h-100"><div class="card-body d-flex gap-3 align-items-center"><span class="metric-icon" aria-hidden="true"></span><div><div class="metric-number">{{ available_room_count }}</div><div class="metric-label">Rooms Available</div><small class="text-muted">Right now</small></div></div></div></div><div class="col"><div class="card metric h-100"><div class="card-body d-flex gap-3 align-items-center"><span class="metric-icon metric-red" aria-hidden="true"></span><div><div class="metric-number">{{ pending_booking_count }}</div><div class="metric-label">Pending Approval</div><small class="text-muted">Requires action</small></div></div></div></div></div><div class="dash-grid"><aside><section class="card dash-panel shadow-sm"><div class="card-body"><h2 class="h5">Quick Actions</h2><a class="quick-link primary" href="{% url 'book_room' %}"><span><strong>Book a Room</strong><small class="d-block">Check availability and make a booking</small></span><span>&rsaquo;</span></a><a class="quick-link" href="{% url 'calendar' %}"><span><strong>View Calendar</strong><small class="d-block text-muted">See all upcoming bookings</small></span><span>&rsaquo;</span></a><a class="quick-link" href="{% url 'my_bookings' %}"><span><strong>My Bookings</strong><small class="d-block text-muted">View and manage your bookings</small></span><span>&rsaquo;</span></a></div></section><section class="card dash-panel shadow-sm mt-3"><div class="card-body"><div class="d-flex justify-content-between"><h2 class="h5">Upcoming Bookings</h2><a href="{% url 'calendar' %}">View all</a></div>{% for booking in upcoming_bookings %}<div class="booking-item"><div class="booking-time">{{ booking.start_time|date:"d M" }}<br>{{ booking.start_time|time:"g:i A" }}</div><div><div class="booking-name">{{ booking.purpose }}</div><div class="booking-room">{{ booking.room.name }} · until {{ booking.end_time|time:"g:i A" }}</div></div></div>{% empty %}<p class="text-muted mb-0">No upcoming approved bookings.</p>{% endfor %}</div></section></aside><section class="card dash-panel shadow-sm"><div class="card-body"><div class="d-flex justify-content-between align-items-center"><h2 class="h5">Room Availability</h2><a href="{% url 'rooms' %}">View All Rooms</a></div>{% for data in room_data %}<div class="room-row"><img class="room-thumb" src="{{ data.room.display_image_url }}" alt="{{ data.room.name }}"><div><strong>{{ data.room.name }}</strong><div class="room-meta mt-1">{{ data.room.location }}</div><div class="room-meta">Capacity: {{ data.room.capacity }} pax</div>{% if data.is_occupied %}<div class="text-danger small mt-2"><span class="status-dot busy"></span>Currently in use</div>{% else %}<div class="text-success small mt-2"><span class="status-dot"></span>Available now</div>{% endif %}</div>{% if data.is_occupied %}<span class="btn btn-outline-secondary btn-sm disabled">In use</span>{% else %}<a class="btn btn-success btn-sm" href="{% url 'book_room' %}?room={{ data.room.id }}">Book Now</a>{% endif %}</div>{% empty %}<p class="text-muted">No active rooms available.</p>{% endfor %}</div></section><aside class="dash-right"><section class="card dash-panel shadow-sm"><div class="card-body"><div class="d-flex justify-content-between"><h2 class="h5">Calendar</h2><a href="{% url 'calendar' %}">Open</a></div><h3 class="h6 mt-3">{{ calendar_month_name }} {{ calendar_year }}</h3><div class="calendar-grid fw-bold text-muted"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>{% for week in calendar_weeks %}<div class="calendar-grid">{% for day in week %}{% if day %}<span class="{% if day == today_day %}calendar-today{% endif %}">{{ day }}</span>{% else %}<span></span>{% endif %}{% endfor %}</div>{% endfor %}</div></section><section class="card dash-panel shadow-sm mt-3"><div class="card-body"><h2 class="h5">Room Status</h2><div class="d-flex justify-content-between py-1"><span><span class="status-dot"></span>Available</span><strong>{{ available_room_count }}</strong></div><div class="d-flex justify-content-between py-1"><span><span class="status-dot busy"></span>In use</span><strong>{{ occupied_room_count }}</strong></div><div class="d-flex justify-content-between py-1"><span class="text-muted">Total rooms</span><strong>{{ total_room_count }}</strong></div></div></section></aside></div></main></div>
 {% endblock %}

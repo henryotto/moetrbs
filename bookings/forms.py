@@ -1,7 +1,20 @@
 from django import forms
-from .models import Booking
+from django.urls import reverse
+from .models import Booking, Room
 
 class BookingForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['room'].queryset = Room.objects.filter(is_active=True).order_by('name')
+        for field_name in ('room', 'start_time', 'end_time'):
+            self.fields[field_name].widget.attrs.update({
+                'hx-get': reverse('booking_availability'),
+                'hx-trigger': 'change',
+                'hx-target': '#availability-feedback',
+                'hx-include': '#booking-form',
+                'hx-indicator': '#availability-spinner',
+            })
+
     class Meta:
         model = Booking
         # We only ask the officer for these details. 

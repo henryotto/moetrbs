@@ -1,43 +1,19 @@
 {% extends 'bookings/base.html' %}
 
-{% block title %}Book Room | MoET{% endblock %}
+{% block title %}{% if is_edit %}Edit Booking{% else %}Book a Room{% endif %} | MoET{% endblock %}
+
+{% block extra_head %}
+<style>
+  .booking-shell { max-width: 1080px; margin: 2rem auto; padding: 0 1rem; }
+  .booking-heading { color: #073b4c; }
+  .booking-card, .booking-guide { border: 0; border-radius: 1rem; }
+  .booking-card .card-header { background: linear-gradient(120deg, #004b43, #007565); padding: 1.25rem 1.5rem; }
+  .booking-guide { background: #eaf7f2; color: #17483f; }
+  .booking-guide li { margin-bottom: .85rem; }
+  .form-label { color: #24434b; }
+</style>
+{% endblock %}
 
 {% block content %}
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">
-                        {% if is_edit %}Edit Your Booking{% else %}Request a Meeting Room{% endif %}
-                    </h4>
-                </div>
-                
-                <div class="card-body">
-                    
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
-
-                    <form method="POST" novalidate>
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">{{ field.label }}</label>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-
-                        <button type="submit" class="btn btn-success w-100">
-                                    {% if is_edit %}Save Changes{% else %}Submit Booking Request{% endif %}
-                        </button>
-                    </form>
-
-                </div>
-            </div>
-        </div>
-    </div>
+<main class="booking-shell"><div class="row g-4 align-items-start"><div class="col-lg-8"><div class="mb-4"><p class="text-uppercase small fw-bold text-success mb-1" style="letter-spacing:.1em">Room request</p><h1 class="booking-heading h2 mb-2">{% if is_edit %}Edit your booking{% else %}Reserve a meeting room{% endif %}</h1><p class="text-muted mb-0">{% if is_edit %}Changes are sent back for approval before the room is confirmed.{% else %}Check the room and time below, then submit your request for approval.{% endif %}</p></div><section class="card booking-card shadow-sm"><div class="card-header text-white"><h2 class="h5 mb-1">{% if is_edit %}Booking details{% else %}Request details{% endif %}</h2><p class="small mb-0 opacity-75">Fields marked by the form are required.</p></div><div class="card-body p-4">{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}<form id="booking-form" method="post" novalidate>{% csrf_token %}{% if is_edit %}<input type="hidden" name="booking_id" value="{{ form.instance.id }}">{% endif %}{% for field in form %}<div class="mb-3"><label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>{{ field }}{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}{% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|striptags }}</div>{% endif %}</div>{% endfor %}<div id="availability-feedback" class="mb-3" aria-live="polite"></div><div id="availability-spinner" class="htmx-indicator mb-3"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span class="ms-1 small text-muted">Checking availability…</span></div><div class="d-flex flex-wrap gap-2"><button type="submit" class="btn btn-success px-4">{% if is_edit %}Save changes{% else %}Submit booking request{% endif %}</button><a class="btn btn-outline-secondary" href="{% url 'calendar' %}">View calendar</a></div></form></div></section></div><aside class="col-lg-4"><section class="card booking-guide shadow-sm"><div class="card-body p-4"><h2 class="h5">Before you submit</h2><ol class="small ps-3 mb-0"><li>Choose an active room and meeting purpose.</li><li>Enter the full start and end date and time.</li><li>Availability is checked as you update the details.</li><li>Your request is confirmed after an approver reviews it.</li></ol></div></section><a class="card border-0 shadow-sm text-decoration-none mt-3 d-block" href="{% url 'calendar' %}"><div class="card-body"><strong class="text-dark">Need to check a date first?</strong><span class="d-block text-success small mt-1">Open the booking calendar →</span></div></a></aside></div></main>
 {% endblock %}

@@ -4,7 +4,9 @@ from . import views
 urlpatterns = [
     path('', views.dashboard, name='dashboard'), # Homepage!
     path('book/', views.book_room, name='book_room'),
+    path('book/availability/', views.booking_availability, name='booking_availability'),
     path('calendar/', views.calendar_view, name='calendar'), # Calendar Page
+    path('rooms/', views.rooms, name='rooms'),
     path('api/bookings/', views.api_bookings, name='api_bookings'), # The data
     path('approvals/', views.pending_approvals, name='pending_approvals'),
     path('process/<int:booking_id>/<str:action>/', views.process_booking, name='process_booking'),

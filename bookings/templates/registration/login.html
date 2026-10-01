@@ -1,41 +1,20 @@
 {% extends 'bookings/base.html' %}
+{% load static %}
 
 {% block title %}Log In | MoET{% endblock %}
 
-{% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-header bg-dark text-white text-center py-3">
-                <h4 class="mb-0">Ministry Sign In</h4>
-            </div>
-            <div class="card-body p-4">
-                
-                {% if form.errors %}
-                    <div class="alert alert-danger">
-                        Your username and password didn't match. Please try again.
-                    </div>
-                {% endif %}
+{% block extra_head %}
+<style>
+  .login-stage { min-height: calc(100vh - 250px); display: grid; place-items: center; padding: 2.5rem 0; }
+  .login-card { width: min(100%, 460px); border: 0; border-radius: 1.15rem; overflow: hidden; }
+  .login-logo { width: 104px; height: 104px; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0, 55, 48, .16)); }
+  .login-title { color: #073b4c; }
+  .login-kicker { color: #087160; font-size: .78rem; font-weight: 700; letter-spacing: .13em; }
+  .login-card .form-control { min-height: 46px; border-color: #cedbda; }
+  .login-card .form-control:focus { border-color: #007565; box-shadow: 0 0 0 .2rem rgba(0, 117, 101, .15); }
+</style>
+{% endblock %}
 
-                <form method="POST" action="{% url 'login' %}">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label for="id_username" class="form-label fw-bold">Username</label>
-                        <input type="text" name="username" class="form-control" id="id_username" placeholder="vangov username" required autofocus>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="id_password" class="form-label fw-bold">Password</label>
-                        <input type="password" name="password" class="form-control" id="id_password" placeholder="vangov password" required>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-success w-100">Log In</button>
-                    <input type="hidden" name="next" value="{{ next }}">
-                </form>
-                
-            </div>
-        </div>
-    </div>
-</div>
+{% block content %}
+<main class="login-stage"><section class="card login-card shadow-lg"><div class="card-body p-4 p-sm-5"><div class="text-center mb-4"><img class="login-logo mb-3" src="{% static 'bookings/images/moet-logo-colour.png' %}" alt="Ministry of Education and Training"><p class="login-kicker mb-2">MOET ROOM BOOKING SYSTEM</p><h1 class="login-title h3 mb-2">Welcome back</h1><p class="text-muted mb-0">Sign in to request and manage meeting rooms.</p></div>{% if form.errors %}<div class="alert alert-danger" role="alert">Your username and password did not match. Please try again.</div>{% endif %}<form method="post" action="{% url 'login' %}">{% csrf_token %}<div class="mb-3"><label for="id_username" class="form-label fw-semibold">Username</label><input type="text" name="username" class="form-control" id="id_username" autocomplete="username" placeholder="Your VANGOV username" required autofocus></div><div class="mb-4"><label for="id_password" class="form-label fw-semibold">Password</label><input type="password" name="password" class="form-control" id="id_password" autocomplete="current-password" placeholder="Your VANGOV password" required></div><button type="submit" class="btn btn-success w-100 py-2">Sign in</button><input type="hidden" name="next" value="{{ next }}"></form><p class="text-center text-muted small mt-4 mb-0">Use your Ministry account to continue.</p></div></section></main>
 {% endblock %}

@@ -1,0 +1,5 @@
+<div id="approval-feedback" hx-swap-oob="true" class="alert alert-success alert-dismissible fade show auto-dismiss" role="status">
+    Booking for {{ booking.room.name }} {{ booking.status|lower }} successfully.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<span id="approval-count" hx-swap-oob="true" class="badge bg-warning text-dark fs-6">{{ pending_count }} Request(s)</span>

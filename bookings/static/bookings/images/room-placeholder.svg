@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 172" role="img" aria-labelledby="title">
+  <title>Room image placeholder</title>
+  <rect width="260" height="172" fill="#e7f0ee"/>
+  <rect x="26" y="30" width="208" height="84" rx="6" fill="#bfd8d2"/>
+  <rect x="37" y="41" width="186" height="62" rx="3" fill="#f7fbfa"/>
+  <rect x="74" y="119" width="112" height="22" rx="5" fill="#006658"/>
+  <circle cx="54" cy="151" r="9" fill="#8eb8af"/><circle cx="206" cy="151" r="9" fill="#8eb8af"/>
+  <text x="130" y="78" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#39746b">Room image</text>
+</svg>

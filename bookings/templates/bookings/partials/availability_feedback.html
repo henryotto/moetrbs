@@ -1,0 +1,11 @@
+{% if available %}
+    <div class="alert alert-success mb-0" role="status">
+        <strong>{{ room.name }} is available.</strong>
+        Capacity: {{ room.capacity }}.
+        {% if features %}Features: {{ features|join:", " }}.{% endif %}
+    </div>
+{% elif errors %}
+    <div class="alert alert-warning mb-0" role="alert">
+        {% for error in errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+    </div>
+{% endif %}
